@@ -9,19 +9,20 @@ ref_path = ['/Users/' user_str '/Library/HumanWaveform/'];
 top_path = ['/Users/' user_str];
 valid_file_ext = {'.aif','.mp3','.m4a'};
 
-wf_color = [0 0 0]; % gray waveform color
+wf_color = [0 0 0]; % black waveform color
 wf_position = [1 1 400 120]; % size and position of waveform plot
 wf_ext = '.png';
 
 low_freq_range = 160; %Hz
 low_freq_thresh = 0.001;
 
+% if library folder does not exist, make it
 if (exist(ref_path) ~= 7)
     mkdir(ref_path);
 end
 
 % load lp filter coefs
-load('/Users/jamesmclean/Dropbox/repos/popup_slicer/_main_waveform/filter_coef.mat');
+load(fullfile(ref_path,'filter_coef.mat'));
 
 %% Create the waveform figure
 f = figure('Position',wf_position,'Visible','off');
@@ -106,8 +107,9 @@ for i = 1:n_files
     L = length(y);
 
     % Display waveform and save it
-    plot(y,'Color',wf_color,'Parent',a);
-    set(gca,'XLim',[1 L],'YLim',[-1 1],'XTickLabel','','YTickLabel','','TickLength',[0 0]);
+    plot(y,'Color',wf_color,'Parent',a,'AlignVertexCenters','on');
+    set(gca,'XLim',[1 L],'YLim',[-1 1],'XTickLabel','','YTickLabel','','TickLength',[0 0],'color','none');
+    set(gcf,'color','none');
     export_fig(fname_out_wf,'-transparent');
 
     % delete library folder copy

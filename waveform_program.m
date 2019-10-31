@@ -69,21 +69,13 @@ sausage_flag = low_freq_energy > low_freq_thresh;
 
 %% Apply Lowpass
 if sausage_flag
-    % get correct i/o filenames
-%     fname_out = fullfile(ref_path,['audio_file_lowpass' ext]);
+    % get correct i/o filename
     fname_out_wf = fullfile(path_out,[name '_lowpass' wf_ext]);
-
-%     % lowpass
-%     setenv('fname',fname_ref);
-%     setenv('fname_out',fname_out);
-%     !~/Library/HumanEditor/ffmpeg -i $fname -filter_complex "highpass=f=100:width_type=o:w=8" $fname_out
-% 
-%     % read lowpassed waveform
-%     [y,~] = audioread(fname_out);
-% 
-%     % Delete lowpass filtered file
-%     delete(fname_out);
-    load('/Users/jamesmclean/Dropbox/repos/popup_slicer/_main_waveform/filter_coef.mat');
+    
+    % load filter coefficients
+    load(fullfile(ref_path,'filter_coef.mat'));
+    
+    % low-pass filter
     y = filter(Num,1,y);
 end
 
@@ -95,8 +87,9 @@ end
 L = length(y);
 
 % Display waveform and save it
-plot(y,'Color',wf_color,'Parent',a);
-set(gca,'XLim',[1 L],'YLim',[-1 1],'XTickLabel','','YTickLabel','','TickLength',[0 0]);
+plot(y,'Color',wf_color,'Parent',a,'AlignVertexCenters','on');
+set(gca,'XLim',[1 L],'YLim',[-1 1],'XTickLabel','','YTickLabel','','TickLength',[0 0],'color','none');
+set(gcf,'color','none');
 export_fig(fname_out_wf,'-transparent');
 
 % delete library folder copy
