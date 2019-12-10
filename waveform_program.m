@@ -12,8 +12,10 @@ valid_file_ext = {'.aif','.mp3','.m4a'};
 
 % wf_color = [99 99 99]/255; % gray waveform color
 wf_color = [0 0 0]; % black waveform color
-wf_position = [1 1 400 120]; % size and position of waveform plot
+wf_position = [1 1 600 200]; % size and position of waveform plot
 wf_ext = '.png';
+
+image_dim = [120 400];
 
 low_freq_range = 160; %Hz
 low_freq_thresh = 0.001;
@@ -60,7 +62,7 @@ movefile([ref_path name ext], fname_ref);
 fname_out_wf = fullfile(path_out,[name wf_ext]);
 
 %% Read audio file and calculate spectrum
-[y,fs] = audioread(fname_ref);
+[y,fs] = audioread(fname_ref,'native');
 [Y,f] = single_sided_fft(y(:,1),fs);
 
 %% Determine if sausage
@@ -70,7 +72,7 @@ sausage_flag = low_freq_energy > low_freq_thresh;
 %% Apply Lowpass
 if sausage_flag
     % get correct i/o filename
-    fname_out_wf = fullfile(path_out,[name '_lowpass' wf_ext]);
+    fname_out_wf = fullfile(path_out,[name wf_ext]);
     
     % load filter coefficients
     load(fullfile(ref_path,'filter_coef.mat'));
@@ -86,11 +88,45 @@ if (size(y,2) == 2)
 end
 L = length(y);
 
+% get y-axis limits
+if strcmp(ext,'.aif')
+    info = audioinfo(fname);
+    disp([name ' BitsPerSample = ' num2str(info.BitsPerSample) ' Max Int = ' num2str(max(y))])
+    switch info.BitsPerSample
+        case 8
+            ylim_low = 0;
+            ylim_high = 255;
+        case 16
+            ylim_low = -32768;
+            ylim_high = 32768;
+        case 24
+            ylim_low = -(2^31);
+            ylim_high = (2^31)-1;
+    end
+else
+    ylim_low = -1;
+    ylim_high = 1;
+end 
+
 % Display waveform and save it
 plot(y,'Color',wf_color,'Parent',a,'AlignVertexCenters','on');
-set(gca,'XLim',[1 L],'YLim',[-1 1],'XTickLabel','','YTickLabel','','TickLength',[0 0],'color','none');
+set(gca,'XLim',[1 L],'YLim',[ylim_low ylim_high],'XTickLabel','','YTickLabel','','TickLength',[0 0],'color','none');
 set(gcf,'color','none');
+pbaspect([3 1 1])
 export_fig(fname_out_wf,'-transparent');
+
+% read image, resize to exact size, then write
+[im,~,alpha] = imread(fname_out_wf);
+
+% need to resize a little extra then crop the border
+% we could remove the border in the inital plot but that messes up
+% export fig and causes the image to basically crop to the max points
+% of the waveform
+im = imresize(im,image_dim+6);
+im = im(4:end-3,4:end-3,3);
+alpha = imresize(alpha,image_dim+6);
+alpha = alpha(4:end-3,4:end-3);
+imwrite(im,fname_out_wf,'Mode','lossless','Alpha',alpha);
 
 % delete library folder copy
 delete(fname_ref);
